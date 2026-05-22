@@ -26,7 +26,11 @@ app.get("/", (req, res) => {
 
 app.post("/create-order", async(req, res) => {
     try {
-        const { amount, name, email, phone, purpose } = req.body;
+        const amount = 1;
+        const name = "Client";
+        const email = "";
+        const phone = "";
+        const purpose = "Test Payment";
 
         const order = await razorpay.orders.create({
             amount: amount * 100,
