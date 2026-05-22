@@ -7,9 +7,13 @@ require("dotenv").config();
 const app = express();
 
 app.use(cors({
-    origin: ["https://zelviantech.in", "https://www.zelviantech.in"],
+  origin: [
+    "https://zelviantech.in",
+    "https://www.zelviantech.in",
+    "http://127.0.0.1:5500",
+    "http://localhost:5500"
+  ],
 }));
-app.use(express.json());
 
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
