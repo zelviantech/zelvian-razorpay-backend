@@ -15,84 +15,79 @@ app.use(cors({
   ],
 }));
 
+app.use(express.json());
+
 const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
 app.get("/", (req, res) => {
-    res.send("Zelvian Tech Razorpay Backend Running");
+  res.send("Zelvian Tech Razorpay Backend Running");
 });
 
-app.post("/create-order", async(req, res) => {
-    try {
-        const amount = 1;
-        const name = "Client";
-        const email = "";
-        const phone = "";
-        const purpose = "Test Payment";
+app.post("/create-order", async (req, res) => {
+  try {
+    const amount = Number(req.body?.amount || 1);
 
-        const order = await razorpay.orders.create({
-            amount: amount * 100,
-            currency: "INR",
-            receipt: `ZELVIAN_${Date.now()}`,
-            notes: {
-                name,
-                email,
-                phone,
-                purpose,
-            },
-        });
+    const order = await razorpay.orders.create({
+      amount: amount * 100,
+      currency: "INR",
+      receipt: `ZELVIAN_${Date.now()}`
+    });
 
-        res.json({
-            success: true,
-            key: process.env.RAZORPAY_KEY_ID,
-            order,
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-    }
+    res.json({
+      success: true,
+      key: process.env.RAZORPAY_KEY_ID,
+      order: order
+    });
+
+  } catch (error) {
+    console.log("CREATE ORDER ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: error.error?.description || error.message
+    });
+  }
 });
 
 app.post("/verify-payment", (req, res) => {
-    try {
-        const {
-            razorpay_order_id,
-            razorpay_payment_id,
-            razorpay_signature,
-        } = req.body;
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    } = req.body;
 
-        const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
 
-        const expectedSignature = crypto
-            .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-            .update(body.toString())
-            .digest("hex");
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest("hex");
 
-        if (expectedSignature === razorpay_signature) {
-            res.json({
-                success: true,
-                message: "Payment verified successfully",
-            });
-        } else {
-            res.status(400).json({
-                success: false,
-                message: "Invalid payment signature",
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
+    if (expectedSignature === razorpay_signature) {
+      res.json({
+        success: true,
+        message: "Payment verified successfully",
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Invalid payment signature",
+      });
     }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 });
 
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
